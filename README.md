@@ -76,3 +76,5 @@ go vet ./...
 ```
 
 `nested/` is a second Go module used to demonstrate multi-module bumps, Chainlink-style. `.tool-versions` pins the local Go version (asdf), like the Chainlink repository.
+
+> Demo note: this line is a non-dependency change that must remove the label.
