@@ -1,0 +1,24 @@
+name: only-dep-bump
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: only-dep-bump-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Label only-dependency-bump PRs
+        uses: ./
+        with:
+          token: ${{ github.token }}
+          pr-number: ${{ github.event.pull_request.number }}

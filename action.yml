@@ -1,0 +1,53 @@
+name: Only Dependency Bump
+description: >-
+  Label pull requests that only bump Go module dependencies: only go.mod/go.sum
+  files change, at least one dependency version increases, nothing is
+  downgraded, and the Go version (go/toolchain directives) is untouched.
+
+inputs:
+  token:
+    description: GitHub token with pull-requests write access (e.g. github.token)
+    required: true
+  pr-number:
+    description: Pull request number to evaluate
+    required: true
+  label:
+    description: Label to apply when the PR is only a dependency bump
+    required: false
+    default: only-dependency-bump
+  repo:
+    description: Repository (owner/name) the pull request belongs to
+    required: false
+    default: ${{ github.repository }}
+
+outputs:
+  decision:
+    description: '"true" if the PR was labeled, "false" otherwise'
+    value: ${{ steps.labeler.outputs.decision }}
+  reasons:
+    description: Semicolon-separated disqualifiers when the label is not applied
+    value: ${{ steps.labeler.outputs.reasons }}
+  upgrades:
+    description: Semicolon-separated dependency upgrades found in the PR
+    value: ${{ steps.labeler.outputs.upgrades }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Go
+      uses: actions/setup-go@v7
+      with:
+        go-version-file: ${{ github.action_path }}/go.mod
+        cache: false
+
+    - name: Evaluate pull request
+      id: labeler
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
+        LABELER_REPO: ${{ inputs.repo }}
+        LABELER_PR: ${{ inputs.pr-number }}
+        LABELER_LABEL: ${{ inputs.label }}
+        GOTOOLCHAIN: local
+      run: go run .
