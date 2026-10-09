@@ -63,15 +63,21 @@ func (c *client) listPRFiles(ctx context.Context, n int) ([]string, error) {
 func (c *client) mergeBase(ctx context.Context, base, head string) (string, error) {
 	var cmp struct {
 		MergeBaseSHA string `json:"merge_base_sha"`
+		BehindBy     int    `json:"behind_by"`
 	}
 	u := fmt.Sprintf("/repos/%s/compare/%s...%s", c.cfg.repo, base, head)
 	if err := c.getJSON(ctx, u, &cmp); err != nil {
 		return "", err
 	}
-	if cmp.MergeBaseSHA == "" {
-		return "", fmt.Errorf("no merge base between %s and %s", base, head)
+	if cmp.MergeBaseSHA != "" {
+		return cmp.MergeBaseSHA, nil
 	}
-	return cmp.MergeBaseSHA, nil
+	// When the base is a direct ancestor of the head (behind_by == 0), the
+	// API leaves merge_base_sha empty: the base itself is the merge base.
+	if cmp.BehindBy == 0 {
+		return base, nil
+	}
+	return "", fmt.Errorf("no merge base between %s and %s", base, head)
 }
 
 // getFile returns the raw content of file at ref, or nil if the file does
